@@ -1,15 +1,15 @@
 const db = require('../db');
 
-// Listar todas as ruas de um layout
+// Listar todas as ruas de um depósito
 const listarRuas = async (req, res) => {
-  const layoutId = req.query.layout_id;
+  const depositoId = req.query.deposito_id;
 
-  if (!layoutId) {
-    return res.status(400).send('O parâmetro layout_id é obrigatório');
+  if (!depositoId) {
+    return res.status(400).send('O parâmetro deposito_id é obrigatório');
   }
 
   try {
-    const result = await db.query('SELECT * FROM ruas WHERE layout_id = $1', [layoutId]);
+    const result = await db.query('SELECT * FROM ruas WHERE deposito_id = $1', [depositoId]);
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Erro ao listar ruas:', error);
@@ -33,11 +33,11 @@ const buscarRuaPorId = async (req, res) => {
 
 // Criar rua
 const criarRua = async (req, res) => {
-  const { nome, ordem, layout_id } = req.body;
+  const { nome, ordem, deposito_id } = req.body;
   try {
     const result = await db.query(
-      'INSERT INTO ruas (nome, ordem, layout_id) VALUES ($1, $2, $3) RETURNING *',
-      [nome, ordem, layout_id]
+      'INSERT INTO ruas (nome, ordem, deposito_id) VALUES ($1, $2, $3) RETURNING *',
+      [nome, ordem, deposito_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {

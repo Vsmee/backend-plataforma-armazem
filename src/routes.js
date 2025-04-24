@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const usuarios = require('./controllers/usuarios');
-const layouts = require('./controllers/layouts');
+const depositos = require('./controllers/depositos'); // <- atualizado
 const ruas = require('./controllers/ruas');
 const predios = require('./controllers/predios');
 const andares = require('./controllers/andares');
@@ -10,7 +10,7 @@ const produtos = require('./controllers/produtos');
 const relatorios = require('./controllers/relatorios');
 const integracoes = require('./controllers/integracoesWms');
 
-const verificarToken = require('./auth'); // 🔐 Importa o middleware
+const verificarToken = require('./auth');
 
 // 🔓 Rota pública: login
 router.post('/login', usuarios.fazerLogin);
@@ -30,15 +30,15 @@ router.post('/usuarios', verificarToken, usuarios.criarUsuario);
 router.put('/usuarios/:id', verificarToken, usuarios.atualizarUsuario);
 router.delete('/usuarios/:id', verificarToken, usuarios.deletarUsuario);
 
-// ROTAS PROTEGIDAS: Layouts
-router.get('/layouts', verificarToken, layouts.listarLayouts);
-router.get('/layouts/:id', verificarToken, layouts.buscarLayoutPorId);
-router.post('/layouts', verificarToken, layouts.criarLayout);
-router.put('/layouts/:id', verificarToken, layouts.atualizarLayout);
-router.delete('/layouts/:id', verificarToken, layouts.deletarLayout);
+// ROTAS PROTEGIDAS: Depósitos
+router.get('/depositos', verificarToken, depositos.listarDepositos);
+router.get('/depositos/:id', verificarToken, depositos.buscarDepositoPorId);
+router.post('/depositos', verificarToken, depositos.criarDeposito);
+router.put('/depositos/:id', verificarToken, depositos.atualizarDeposito);
+router.delete('/depositos/:id', verificarToken, depositos.deletarDeposito);
 
 // RUAS
-router.get('/ruas', verificarToken, ruas.listarRuas); // usar ?layout_id=...
+router.get('/ruas', verificarToken, ruas.listarRuas); // usar ?deposito_id=...
 router.get('/ruas/:id', verificarToken, ruas.buscarRuaPorId);
 router.post('/ruas', verificarToken, ruas.criarRua);
 router.put('/ruas/:id', verificarToken, ruas.atualizarRua);
@@ -73,7 +73,7 @@ router.put('/produtos/:id', verificarToken, produtos.atualizarProduto);
 router.delete('/produtos/:id', verificarToken, produtos.deletarProduto);
 
 // RELATÓRIOS
-router.get('/relatorios', verificarToken, relatorios.listarRelatorios); // usar ?layout_id=...
+router.get('/relatorios', verificarToken, relatorios.listarRelatorios); // usar ?deposito_id=...
 router.get('/relatorios/:id', verificarToken, relatorios.buscarRelatorioPorId);
 router.post('/relatorios', verificarToken, relatorios.criarRelatorio);
 router.delete('/relatorios/:id', verificarToken, relatorios.deletarRelatorio);

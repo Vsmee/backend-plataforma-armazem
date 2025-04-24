@@ -1,15 +1,15 @@
 const db = require('../db');
 
-// Listar relatórios por layout
+// Listar relatórios por depósito
 const listarRelatorios = async (req, res) => {
-  const { layout_id } = req.query;
+  const { deposito_id } = req.query;
 
-  if (!layout_id) return res.status(400).send('layout_id é obrigatório');
+  if (!deposito_id) return res.status(400).send('deposito_id é obrigatório');
 
   try {
     const result = await db.query(
-      'SELECT * FROM relatorios WHERE layout_id = $1 ORDER BY gerado_em DESC',
-      [layout_id]
+      'SELECT * FROM relatorios WHERE deposito_id = $1 ORDER BY gerado_em DESC',
+      [deposito_id]
     );
     res.status(200).json(result.rows);
   } catch (error) {
@@ -34,14 +34,14 @@ const buscarRelatorioPorId = async (req, res) => {
 
 // Criar relatório
 const criarRelatorio = async (req, res) => {
-  const { tipo, filtros_json, resultado, layout_id } = req.body;
+  const { tipo, filtros_json, resultado, deposito_id } = req.body;
 
-  if (!tipo || !layout_id) return res.status(400).send('tipo e layout_id são obrigatórios');
+  if (!tipo || !deposito_id) return res.status(400).send('tipo e deposito_id são obrigatórios');
 
   try {
     const result = await db.query(
-      'INSERT INTO relatorios (tipo, filtros_json, resultado, layout_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [tipo, filtros_json || null, resultado || null, layout_id]
+      'INSERT INTO relatorios (tipo, filtros_json, resultado, deposito_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [tipo, filtros_json || null, resultado || null, deposito_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
