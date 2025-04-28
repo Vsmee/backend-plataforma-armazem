@@ -59,19 +59,32 @@ const criarUsuario = async (req, res) => {
 // 🔹 Atualiza um usuário
 const atualizarUsuario = async (req, res) => {
   const { id } = req.params;
-  const { nome, email } = req.body;
+  const { nome, email, senha } = req.body;
 
   try {
-    await db.query(
-      'UPDATE usuarios SET nome = $1, email = $2 WHERE id = $3',
-      [nome, email, id]
-    );
+    if (senha) {
+      // Se senha foi enviada, atualizar também a senha_hash
+      const senhaHash = await bcrypt.hash(senha, 10);
+
+      await db.query(
+        'UPDATE usuarios SET nome = $1, email = $2, senha_hash = $3 WHERE id = $4',
+        [nome, email, senhaHash, id]
+      );
+    } else {
+      // Se não enviar senha, atualiza só nome e email
+      await db.query(
+        'UPDATE usuarios SET nome = $1, email = $2 WHERE id = $3',
+        [nome, email, id]
+      );
+    }
+
     res.status(200).send('Usuário atualizado com sucesso');
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
     res.status(500).send('Erro interno');
   }
 };
+
 
 // 🔹 Remove um usuário
 const deletarUsuario = async (req, res) => {
