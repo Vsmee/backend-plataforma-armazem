@@ -36,6 +36,8 @@ router.get('/depositos/:id', verificarToken, depositos.buscarDepositoPorId);
 router.post('/depositos', verificarToken, depositos.criarDeposito);
 router.put('/depositos/:id', verificarToken, depositos.atualizarDeposito);
 router.delete('/depositos/:id', verificarToken, depositos.deletarDeposito);
+router.post('/depositos/:id/importar-layout', verificarToken, depositos.importarLayout);
+
 
 // RUAS
 router.get('/ruas', verificarToken, ruas.listarRuas); // usar ?deposito_id=...

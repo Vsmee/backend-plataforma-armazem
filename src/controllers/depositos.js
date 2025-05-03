@@ -91,10 +91,104 @@ const deletarDeposito = async (req, res) => {
   }
 };
 
+// Importar Layout
+const importarLayout = async (req, res) => {
+  const depositoId = parseInt(req.params.id, 10);
+  const dados = req.body; // Array de células [{ tipo, codigo, x, y }]
+
+  console.log('Recebido para importação:', dados)
+
+
+  if (!Array.isArray(dados)) {
+    return res.status(400).json({ erro: 'Formato inválido. Esperado um array de células.' });
+  }
+
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    for (const celula of dados) {
+      const { tipo, codigo, nome, x, y } = celula;
+
+      // Usa nome se existir, senão usa o código
+      const nomeFinal = nome && nome.trim() !== '' ? nome : codigo;
+      
+      if (!codigo || typeof x !== 'number' || typeof y !== 'number') continue;
+      
+      if (tipo === 'rua') {
+        const jaExiste = await client.query(
+          'SELECT id FROM ruas WHERE codigo = $1 AND deposito_id = $2',
+          [codigo, depositoId]
+        )
+      
+        if (jaExiste.rows.length) {
+          if (nome && nome.trim() !== '') {
+            await client.query(
+              'UPDATE ruas SET x = $1, y = $2, nome = $3 WHERE id = $4',
+              [x, y, nome, jaExiste.rows[0].id]
+            )
+          } else {
+            await client.query(
+              'UPDATE ruas SET x = $1, y = $2 WHERE id = $3',
+              [x, y, jaExiste.rows[0].id]
+            )
+          }
+        } else {
+          await client.query(
+            'INSERT INTO ruas (codigo, nome, x, y, deposito_id) VALUES ($1, $2, $3, $4, $5)',
+            [codigo, nome && nome.trim() !== '' ? nome : codigo, x, y, depositoId]
+          )
+        }
+      }
+      
+      
+      if (tipo === 'predio') {
+        const jaExiste = await client.query(
+          'SELECT id FROM predios WHERE codigo = $1 AND deposito_id = $2',
+          [codigo, depositoId]
+        )
+      
+        if (jaExiste.rows.length) {
+          if (nome && nome.trim() !== '') {
+            await client.query(
+              'UPDATE predios SET x = $1, y = $2, nome = $3 WHERE id = $4',
+              [x, y, nome, jaExiste.rows[0].id]
+            )
+          } else {
+            await client.query(
+              'UPDATE predios SET x = $1, y = $2 WHERE id = $3',
+              [x, y, jaExiste.rows[0].id]
+            )
+          }
+        } else {
+          await client.query(
+            'INSERT INTO predios (codigo, nome, x, y, deposito_id) VALUES ($1, $2, $3, $4, $5)',
+            [codigo, nome && nome.trim() !== '' ? nome : codigo, x, y, depositoId]
+          )
+        }
+      }
+      
+      
+    }
+
+    await client.query('COMMIT');
+    res.status(200).json({ mensagem: 'Layout importado com sucesso.' });
+  } catch (erro) {
+    await client.query('ROLLBACK');
+    console.error(erro);
+    res.status(500).json({ erro: 'Erro ao importar layout.' });
+  } finally {
+    client.release();
+  }
+};
+
+
 module.exports = {
   listarDepositos,
   buscarDepositoPorId,
   criarDeposito,
   atualizarDeposito,
   deletarDeposito,
+  importarLayout,
 };
