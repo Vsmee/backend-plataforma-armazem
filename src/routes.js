@@ -47,7 +47,8 @@ router.put('/ruas/:id', verificarToken, ruas.atualizarRua);
 router.delete('/ruas/:id', verificarToken, ruas.deletarRua);
 
 // PRÉDIOS
-router.get('/predios', verificarToken, predios.listarPredios); // usar ?rua_id=...
+router.get('/predios/por-rua/:rua_id', verificarToken, predios.listarPorRua);
+router.get('/predios/por-deposito/:deposito_id', verificarToken, predios.listarPorDeposito);
 router.get('/predios/:id', verificarToken, predios.buscarPredioPorId);
 router.post('/predios', verificarToken, predios.criarPredio);
 router.put('/predios/:id', verificarToken, predios.atualizarPredio);

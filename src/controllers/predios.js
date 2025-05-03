@@ -1,11 +1,22 @@
 const db = require('../db');
 
-// Listar prédios de uma rua
-const listarPredios = async (req, res) => {
-  const { rua_id } = req.query;
+// Listar prédios de uma rua ou deposito
+const listarPorDeposito = async (req, res) => {
+  const { deposito_id } = req.params;
+  try {
+    const result = await db.query(
+      'SELECT * FROM predios WHERE deposito_id = $1',
+      [deposito_id]
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar por depósito:', error);
+    res.status(500).send('Erro interno');
+  }
+};
 
-  if (!rua_id) return res.status(400).send('rua_id é obrigatório');
-
+const listarPorRua = async (req, res) => {
+  const { rua_id } = req.params;
   try {
     const result = await db.query(
       'SELECT * FROM predios WHERE rua_id = $1',
@@ -13,10 +24,12 @@ const listarPredios = async (req, res) => {
     );
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Erro ao listar prédios:', error);
+    console.error('Erro ao listar por rua:', error);
     res.status(500).send('Erro interno');
   }
 };
+
+
 
 // Buscar prédio por ID
 const buscarPredioPorId = async (req, res) => {
@@ -81,7 +94,8 @@ const deletarPredio = async (req, res) => {
 };
 
 module.exports = {
-  listarPredios,
+  listarPorRua,
+  listarPorDeposito,
   buscarPredioPorId,
   criarPredio,
   atualizarPredio,
