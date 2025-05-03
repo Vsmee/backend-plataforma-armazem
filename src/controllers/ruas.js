@@ -1,20 +1,29 @@
 const db = require('../db');
 
 // Listar todas as ruas de um depósito
-const listarRuasPorDeposito = async (req, res) => {
-  const { deposito_id } = req.params
+const listarPorDeposito = async (req, res) => {
+  const { id } = req.params;
 
   try {
-    const result = await db.query(
-      'SELECT * FROM ruas WHERE deposito_id = $1',
-      [deposito_id]
-    )
-    res.status(200).json(result.rows)
+    const result = await db.query(`
+      SELECT 
+        r.id, r.nome, r.codigo, r.deposito_id,
+        COALESCE(
+          json_agg(json_build_object('x', rp.x, 'y', rp.y)) 
+          FILTER (WHERE rp.id IS NOT NULL), '[]'
+        ) AS posicoes
+      FROM ruas r
+      LEFT JOIN rua_posicoes rp ON r.id = rp.rua_id
+      WHERE r.deposito_id = $1
+      GROUP BY r.id
+    `, [id]);
+
+    res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar ruas por depósito:', error)
-    res.status(500).send('Erro interno')
+    console.error('Erro ao listar ruas por depósito:', error);
+    res.status(500).send('Erro interno ao buscar ruas');
   }
-}
+};
 
 // Buscar rua por ID
 const buscarRuaPorId = async (req, res) => {
@@ -75,7 +84,7 @@ const deletarRua = async (req, res) => {
 };
 
 module.exports = {
-  listarRuasPorDeposito,
+  listarPorDeposito,
   buscarRuaPorId,
   criarRua,
   atualizarRua,

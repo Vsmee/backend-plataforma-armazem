@@ -40,7 +40,7 @@ router.post('/depositos/:id/importar-layout', verificarToken, depositos.importar
 
 
 // RUAS
-router.get('/ruas/por-deposito/:deposito_id', verificarToken, ruas.listarRuasPorDeposito)
+router.get('/ruas/por-deposito/:id', verificarToken, ruas.listarPorDeposito)
 router.get('/ruas/:id', verificarToken, ruas.buscarRuaPorId);
 router.post('/ruas', verificarToken, ruas.criarRua);
 router.put('/ruas/:id', verificarToken, ruas.atualizarRua);
@@ -48,7 +48,7 @@ router.delete('/ruas/:id', verificarToken, ruas.deletarRua);
 
 // PRÉDIOS
 router.get('/predios/por-rua/:rua_id', verificarToken, predios.listarPorRua);
-router.get('/predios/por-deposito/:deposito_id', verificarToken, predios.listarPorDeposito);
+router.get('/predios/por-deposito/:id', verificarToken, predios.listarPorDeposito);
 router.get('/predios/:id', verificarToken, predios.buscarPredioPorId);
 router.post('/predios', verificarToken, predios.criarPredio);
 router.put('/predios/:id', verificarToken, predios.atualizarPredio);

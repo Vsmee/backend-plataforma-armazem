@@ -91,124 +91,133 @@ const deletarDeposito = async (req, res) => {
   }
 };
 
-// Importar Layout
+
 // Importar Layout
 const importarLayout = async (req, res) => {
   const depositoId = parseInt(req.params.id, 10);
-  const dados = req.body; // Array de células [{ tipo, codigo, x, y }]
+  const dados = req.body;
 
   if (!Array.isArray(dados)) {
     return res.status(400).json({ erro: 'Formato inválido. Esperado um array de células.' });
   }
 
-  const codigosNovosRuas = new Set();
-  const codigosNovosPredios = new Set();
-
-  for (const celula of dados) {
-    if (celula.tipo === 'rua') codigosNovosRuas.add(celula.codigo);
-    if (celula.tipo === 'predio') codigosNovosPredios.add(celula.codigo);
-  }
-
   const client = await db.connect();
-
   try {
+    console.log('📦 Iniciando importação, depósito:', depositoId);
+    console.log('📄 Dados recebidos:', dados.slice(0, 5)); // só mostra os 5 primeiros
+
     await client.query('BEGIN');
 
-    // 🧹 Deletar RUAS antigas
-    if (codigosNovosRuas.size > 0) {
-      const codigosArray = Array.from(codigosNovosRuas);
+    const ruasMap = new Map();
+    const prediosMap = new Map();
+
+    for (const celula of dados) {
+      const { tipo, codigo, nome, x, y } = celula;
+
+      if (!codigo || typeof x !== 'number' || typeof y !== 'number') continue;
+
+      const nomeFinal = nome && nome.trim() !== '' ? nome : codigo;
+      const targetMap = tipo === 'rua' ? ruasMap : tipo === 'predio' ? prediosMap : null;
+      if (!targetMap) continue;
+
+      if (!targetMap.has(codigo)) {
+        targetMap.set(codigo, { nome: nomeFinal, posicoes: [] });
+      }
+      targetMap.get(codigo).posicoes.push({ x, y });
+    }
+
+    console.log('🧱 Ruas map:', [...ruasMap.entries()]);
+    console.log('🏢 Prédios map:', [...prediosMap.entries()]);
+
+    await client.query(`
+      DELETE FROM rua_posicoes
+      WHERE rua_id IN (SELECT id FROM ruas WHERE deposito_id = $1)
+    `, [depositoId]);
+
+    await client.query(`
+      DELETE FROM predio_posicoes
+      WHERE predio_id IN (SELECT id FROM predios WHERE deposito_id = $1)
+    `, [depositoId]);
+
+    // deletar ruas/predios antigos
+    const codigosRuas = [...ruasMap.keys()];
+    const codigosPredios = [...prediosMap.keys()];
+
+    if (codigosRuas.length > 0) {
       await client.query(
         `DELETE FROM ruas
-         WHERE deposito_id = $1 AND (codigo IS NULL OR codigo NOT IN (${codigosArray.map((_, i) => `$${i + 2}`).join(', ')}))`,
-        [depositoId, ...codigosArray]
+         WHERE deposito_id = $1 AND (codigo IS NULL OR codigo NOT IN (${codigosRuas.map((_, i) => `$${i + 2}`).join(', ')}))`,
+        [depositoId, ...codigosRuas]
       );
     } else {
       await client.query('DELETE FROM ruas WHERE deposito_id = $1', [depositoId]);
     }
 
-    // 🧹 Deletar PRÉDIOS antigos
-    if (codigosNovosPredios.size > 0) {
-      const codigosArray = Array.from(codigosNovosPredios);
+    if (codigosPredios.length > 0) {
       await client.query(
         `DELETE FROM predios
-         WHERE deposito_id = $1 AND (codigo IS NULL OR codigo NOT IN (${codigosArray.map((_, i) => `$${i + 2}`).join(', ')}))`,
-        [depositoId, ...codigosArray]
+         WHERE deposito_id = $1 AND (codigo IS NULL OR codigo NOT IN (${codigosPredios.map((_, i) => `$${i + 2}`).join(', ')}))`,
+        [depositoId, ...codigosPredios]
       );
     } else {
       await client.query('DELETE FROM predios WHERE deposito_id = $1', [depositoId]);
     }
 
-    // 🔁 Inserir ou atualizar as células recebidas
-    for (const celula of dados) {
-      const { tipo, codigo, nome, x, y } = celula;
+    for (const [codigo, { nome, posicoes }] of ruasMap.entries()) {
+      const result = await client.query(
+        `INSERT INTO ruas (codigo, nome, deposito_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (codigo, deposito_id) DO UPDATE SET nome = EXCLUDED.nome
+         RETURNING id`,
+        [codigo, nome, depositoId]
+      );
 
-      const nomeFinal = nome && nome.trim() !== '' ? nome : codigo;
+      const ruaId = result.rows[0]?.id;
+      console.log(`🟦 Rua ${codigo} => ID: ${ruaId}`);
 
-      if (!codigo || typeof x !== 'number' || typeof y !== 'number') continue;
-
-      if (tipo === 'rua') {
-        const jaExiste = await client.query(
-          'SELECT id FROM ruas WHERE codigo = $1 AND deposito_id = $2',
-          [codigo, depositoId]
+      for (const { x, y } of posicoes) {
+        console.log(`   ➕ Posição RUA: (${x}, ${y})`);
+        await client.query(
+          'INSERT INTO rua_posicoes (rua_id, x, y) VALUES ($1, $2, $3)',
+          [ruaId, x, y]
         );
-
-        if (jaExiste.rows.length) {
-          if (nome && nome.trim() !== '') {
-            await client.query(
-              'UPDATE ruas SET x = $1, y = $2, nome = $3 WHERE id = $4',
-              [x, y, nome, jaExiste.rows[0].id]
-            );
-          } else {
-            await client.query(
-              'UPDATE ruas SET x = $1, y = $2 WHERE id = $3',
-              [x, y, jaExiste.rows[0].id]
-            );
-          }
-        } else {
-          await client.query(
-            'INSERT INTO ruas (codigo, nome, x, y, deposito_id) VALUES ($1, $2, $3, $4, $5)',
-            [codigo, nomeFinal, x, y, depositoId]
-          );
-        }
       }
+    }
 
-      if (tipo === 'predio') {
-        const jaExiste = await client.query(
-          'SELECT id FROM predios WHERE codigo = $1 AND deposito_id = $2',
-          [codigo, depositoId]
+    for (const [codigo, { nome, posicoes }] of prediosMap.entries()) {
+      const result = await client.query(
+        `INSERT INTO predios (codigo, nome, deposito_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (codigo, deposito_id) DO UPDATE SET nome = EXCLUDED.nome
+         RETURNING id`,
+        [codigo, nome, depositoId]
+      );
+
+      const predioId = result.rows[0]?.id;
+      console.log(`🟥 Prédio ${codigo} => ID: ${predioId}`);
+
+      for (const { x, y } of posicoes) {
+        console.log(`   ➕ Posição PRÉDIO: (${x}, ${y})`);
+        await client.query(
+          'INSERT INTO predio_posicoes (predio_id, x, y) VALUES ($1, $2, $3)',
+          [predioId, x, y]
         );
-
-        if (jaExiste.rows.length) {
-          if (nome && nome.trim() !== '') {
-            await client.query(
-              'UPDATE predios SET x = $1, y = $2, nome = $3 WHERE id = $4',
-              [x, y, nome, jaExiste.rows[0].id]
-            );
-          } else {
-            await client.query(
-              'UPDATE predios SET x = $1, y = $2 WHERE id = $3',
-              [x, y, jaExiste.rows[0].id]
-            );
-          }
-        } else {
-          await client.query(
-            'INSERT INTO predios (codigo, nome, x, y, deposito_id) VALUES ($1, $2, $3, $4, $5)',
-            [codigo, nomeFinal, x, y, depositoId]
-          );
-        }
       }
     }
 
     await client.query('COMMIT');
     res.status(200).json({ mensagem: 'Layout importado com sucesso.' });
+
   } catch (erro) {
     await client.query('ROLLBACK');
-    console.error(erro);
+    console.error('❌ Erro ao importar layout:', erro);
     res.status(500).json({ erro: 'Erro ao importar layout.' });
   } finally {
     client.release();
   }
 };
+
+
 
 
 

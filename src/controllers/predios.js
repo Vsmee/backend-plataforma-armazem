@@ -2,18 +2,29 @@ const db = require('../db');
 
 // Listar prédios de um depósito
 const listarPorDeposito = async (req, res) => {
-  const { deposito_id } = req.params;
+  const { id } = req.params;
+
   try {
-    const result = await db.query(
-      'SELECT * FROM predios WHERE deposito_id = $1',
-      [deposito_id]
-    );
+    const result = await db.query(`
+      SELECT 
+        p.id, p.nome, p.codigo, p.deposito_id,
+        COALESCE(
+          json_agg(json_build_object('x', pp.x, 'y', pp.y)) 
+          FILTER (WHERE pp.id IS NOT NULL), '[]'
+        ) AS posicoes
+      FROM predios p
+      LEFT JOIN predio_posicoes pp ON p.id = pp.predio_id
+      WHERE p.deposito_id = $1
+      GROUP BY p.id
+    `, [id]);
+
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Erro ao listar por depósito:', error);
-    res.status(500).send('Erro interno');
+    console.error('Erro ao listar prédios por depósito:', error);
+    res.status(500).send('Erro interno ao buscar prédios');
   }
 };
+
 
 // Listar prédios de uma rua
 const listarPorRua = async (req, res) => {
