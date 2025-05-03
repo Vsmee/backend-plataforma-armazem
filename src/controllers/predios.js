@@ -1,6 +1,6 @@
 const db = require('../db');
 
-// Listar prédios de uma rua ou deposito
+// Listar prédios de um depósito
 const listarPorDeposito = async (req, res) => {
   const { deposito_id } = req.params;
   try {
@@ -15,6 +15,7 @@ const listarPorDeposito = async (req, res) => {
   }
 };
 
+// Listar prédios de uma rua
 const listarPorRua = async (req, res) => {
   const { rua_id } = req.params;
   try {
@@ -28,8 +29,6 @@ const listarPorRua = async (req, res) => {
     res.status(500).send('Erro interno');
   }
 };
-
-
 
 // Buscar prédio por ID
 const buscarPredioPorId = async (req, res) => {
@@ -46,14 +45,16 @@ const buscarPredioPorId = async (req, res) => {
 
 // Criar prédio
 const criarPredio = async (req, res) => {
-  const { nome, rua_id, posicao_x, posicao_y } = req.body;
+  const { nome, codigo, rua_id, deposito_id, x, y } = req.body;
 
-  if (!nome || !rua_id) return res.status(400).send('nome e rua_id são obrigatórios');
+  if (!nome || !codigo || !deposito_id) {
+    return res.status(400).send('nome, codigo e deposito_id são obrigatórios');
+  }
 
   try {
     const result = await db.query(
-      'INSERT INTO predios (nome, rua_id, posicao_x, posicao_y) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nome, rua_id, posicao_x || 0, posicao_y || 0]
+      'INSERT INTO predios (nome, codigo, rua_id, deposito_id, x, y) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [nome, codigo, rua_id || null, deposito_id, x || 0, y || 0]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -65,12 +66,12 @@ const criarPredio = async (req, res) => {
 // Atualizar prédio
 const atualizarPredio = async (req, res) => {
   const { id } = req.params;
-  const { nome, posicao_x, posicao_y } = req.body;
+  const { nome, codigo, x, y } = req.body;
 
   try {
     const result = await db.query(
-      'UPDATE predios SET nome = $1, posicao_x = $2, posicao_y = $3 WHERE id = $4 RETURNING *',
-      [nome, posicao_x, posicao_y, id]
+      'UPDATE predios SET nome = $1, codigo = $2, x = $3, y = $4 WHERE id = $5 RETURNING *',
+      [nome, codigo, x, y, id]
     );
     if (result.rows.length === 0) return res.status(404).send('Prédio não encontrado');
     res.status(200).json(result.rows[0]);
