@@ -40,7 +40,7 @@ router.post('/depositos/:id/importar-layout', verificarToken, depositos.importar
 
 
 // RUAS
-router.get('/ruas', verificarToken, ruas.listarRuas); // usar ?deposito_id=...
+router.get('/ruas/por-deposito/:deposito_id', verificarToken, ruas.listarRuasPorDeposito)
 router.get('/ruas/:id', verificarToken, ruas.buscarRuaPorId);
 router.post('/ruas', verificarToken, ruas.criarRua);
 router.put('/ruas/:id', verificarToken, ruas.atualizarRua);
