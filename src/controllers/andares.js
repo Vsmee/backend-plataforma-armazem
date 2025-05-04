@@ -5,14 +5,12 @@ const listarAndares = async (req, res) => {
     const result = await db.query(`
       SELECT
         andares.id,
-        andares.nome,
-        andares.codigo,
-        andares.predio_id,
+        andares.numero,
         predios.nome AS nome_predio,
         predios.deposito_id
       FROM andares
       JOIN predios ON andares.predio_id = predios.id
-      ORDER BY predios.nome, andares.nome;
+      ORDER BY predios.nome;
     `);
     res.status(200).json(result.rows);
   } catch (error) {
@@ -76,12 +74,16 @@ const criarAndar = async (req, res) => {
 // Atualizar
 const atualizarAndar = async (req, res) => {
   const { id } = req.params;
-  const { numero } = req.body;
+  const { numero, predio_id } = req.body;
+
+  if (!numero || !predio_id) {
+    return res.status(400).send('numero e predio_id são obrigatórios');
+  }
 
   try {
     const result = await db.query(
-      'UPDATE andares SET numero = $1 WHERE id = $2 RETURNING *',
-      [numero, id]
+      'UPDATE andares SET numero = $1, predio_id = $2 WHERE id = $3 RETURNING *',
+      [numero, predio_id, id]
     );
     if (result.rows.length === 0) return res.status(404).send('Andar não encontrado');
     res.status(200).json(result.rows[0]);
@@ -90,6 +92,7 @@ const atualizarAndar = async (req, res) => {
     res.status(500).send('Erro interno');
   }
 };
+
 
 // Deletar
 const deletarAndar = async (req, res) => {

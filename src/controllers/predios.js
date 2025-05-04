@@ -92,8 +92,8 @@ const criarPredio = async (req, res) => {
 
   try {
     const result = await db.query(
-      'INSERT INTO predios (nome, codigo, rua_id, deposito_id, x, y) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [nome, codigo, rua_id || null, deposito_id, x || 0, y || 0]
+      'INSERT INTO predios (nome, codigo, rua_id, deposito_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nome, codigo, rua_id || null, deposito_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -109,8 +109,8 @@ const atualizarPredio = async (req, res) => {
 
   try {
     const result = await db.query(
-      'UPDATE predios SET nome = $1, codigo = $2, x = $3, y = $4 WHERE id = $5 RETURNING *',
-      [nome, codigo, x, y, id]
+      'UPDATE predios SET nome = $1, codigo = $2 WHERE id = $3 RETURNING *',
+      [nome, codigo, id]
     );
     if (result.rows.length === 0) return res.status(404).send('Prédio não encontrado');
     res.status(200).json(result.rows[0]);

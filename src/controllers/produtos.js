@@ -10,7 +10,9 @@ const listarProdutos = async (req, res) => {
         produtos.id,
         produtos.nome,
         produtos.codigo,
+        produtos.quantidade,
         produtos.apartamento_id,
+        produtos.criado_em,
         apartamentos.nome AS nome_apartamento,
         apartamentos.andar_id
       FROM produtos
@@ -58,7 +60,7 @@ const buscarProdutoPorId = async (req, res) => {
 
 // Criar produto
 const criarProduto = async (req, res) => {
-  const { nome, quantidade, data_validade, apartamento_id } = req.body;
+  const { nome, codigo, quantidade, apartamento_id } = req.body;
 
   if (!nome || !quantidade || !apartamento_id) {
     return res.status(400).send('nome, quantidade e apartamento_id são obrigatórios');
@@ -66,8 +68,8 @@ const criarProduto = async (req, res) => {
 
   try {
     const result = await db.query(
-      'INSERT INTO produtos (nome, quantidade, data_validade, apartamento_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [nome, quantidade, data_validade || null, apartamento_id]
+      'INSERT INTO produtos (nome, codigo, quantidade, apartamento_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nome, codigo || null, quantidade, apartamento_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -79,12 +81,12 @@ const criarProduto = async (req, res) => {
 // Atualizar produto
 const atualizarProduto = async (req, res) => {
   const { id } = req.params;
-  const { nome, quantidade, data_validade } = req.body;
+  const { nome, codigo, quantidade, apartamento_id } = req.body;
 
   try {
     const result = await db.query(
-      'UPDATE produtos SET nome = $1, quantidade = $2, data_validade = $3 WHERE id = $4 RETURNING *',
-      [nome, quantidade, data_validade, id]
+      'UPDATE produtos SET nome = $1, codigo = $2, quantidade = $3, apartamento_id = $4 WHERE id = $5 RETURNING *',
+      [nome, codigo || null, quantidade, apartamento_id, id]
     );
     if (result.rows.length === 0) return res.status(404).send('Produto não encontrado');
     res.status(200).json(result.rows[0]);

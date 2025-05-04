@@ -9,12 +9,13 @@ const listarApartamentos = async (req, res) => {
         apartamentos.id,
         apartamentos.nome,
         apartamentos.codigo,
+        apartamentos.criado_em,
         apartamentos.andar_id,
-        andares.nome AS nome_andar,
+        andares.numero AS nome_andar,
         andares.predio_id
       FROM apartamentos
       JOIN andares ON apartamentos.andar_id = andares.id
-      ORDER BY andares.nome, apartamentos.nome;
+      ORDER BY andares.numero;
     `);
     res.status(200).json(result.rows);
   } catch (error) {
@@ -57,16 +58,16 @@ const buscarApartamentoPorId = async (req, res) => {
 
 // Criar
 const criarApartamento = async (req, res) => {
-  const { numero, andar_id } = req.body;
+  const { nome, codigo, andar_id } = req.body;
 
-  if (!numero || !andar_id) {
-    return res.status(400).send('numero e andar_id são obrigatórios');
+  if (!nome || !andar_id || !codigo) {
+    return res.status(400).send('nome e andar_id são obrigatórios');
   }
 
   try {
     const result = await db.query(
-      'INSERT INTO apartamentos (numero, andar_id) VALUES ($1, $2) RETURNING *',
-      [numero, andar_id]
+      'INSERT INTO apartamentos (nome, codigo, andar_id) VALUES ($1, $2, $3) RETURNING *',
+      [nome, codigo, andar_id]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -78,12 +79,12 @@ const criarApartamento = async (req, res) => {
 // Atualizar
 const atualizarApartamento = async (req, res) => {
   const { id } = req.params;
-  const { numero } = req.body;
+  const { nome } = req.body;
 
   try {
     const result = await db.query(
-      'UPDATE apartamentos SET numero = $1 WHERE id = $2 RETURNING *',
-      [numero, id]
+      'UPDATE apartamentos SET nome = $1 WHERE id = $2 RETURNING *',
+      [nome, id]
     );
     if (result.rows.length === 0) return res.status(404).send('Apartamento não encontrado');
     res.status(200).json(result.rows[0]);
