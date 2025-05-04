@@ -1,7 +1,32 @@
 const db = require('../db');
 
-// Listar produtos por apartamento
+
+
+
 const listarProdutos = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        produtos.id,
+        produtos.nome,
+        produtos.codigo,
+        produtos.apartamento_id,
+        apartamentos.nome AS nome_apartamento,
+        apartamentos.andar_id
+      FROM produtos
+      JOIN apartamentos ON produtos.apartamento_id = apartamentos.id
+      ORDER BY apartamentos.nome, produtos.nome;
+    `);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar produtos:', error);
+    res.status(500).send('Erro ao buscar produtos.');
+  }
+};
+
+
+// Listar produtos por apartamento
+const listarPorApartamento = async (req, res) => {
   const { apartamento_id } = req.query;
 
   if (!apartamento_id) return res.status(400).send('apartamento_id é obrigatório');
@@ -84,6 +109,7 @@ const deletarProduto = async (req, res) => {
 };
 
 module.exports = {
+  listarPorApartamento,
   listarProdutos,
   buscarProdutoPorId,
   criarProduto,

@@ -1,5 +1,30 @@
 const db = require('../db');
 
+// Listar todas as ruas
+
+const listarRuas = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        ruas.id,
+        ruas.nome,
+        ruas.codigo,
+        ruas.deposito_id,
+        depositos.nome AS nome_deposito
+      FROM ruas
+      JOIN depositos ON ruas.deposito_id = depositos.id
+      ORDER BY depositos.nome, ruas.nome;
+    `);
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar ruas com nome de depósitos:', error);
+    res.status(500).send('Erro ao buscar ruas.');
+  }
+};
+
+
+
 // Listar todas as ruas de um depósito
 const listarPorDeposito = async (req, res) => {
   const { id } = req.params;
@@ -84,6 +109,7 @@ const deletarRua = async (req, res) => {
 };
 
 module.exports = {
+  listarRuas,
   listarPorDeposito,
   buscarRuaPorId,
   criarRua,

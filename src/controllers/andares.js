@@ -1,7 +1,29 @@
 const db = require('../db');
 
-// Listar andares por prédio
 const listarAndares = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        andares.id,
+        andares.nome,
+        andares.codigo,
+        andares.predio_id,
+        predios.nome AS nome_predio,
+        predios.deposito_id
+      FROM andares
+      JOIN predios ON andares.predio_id = predios.id
+      ORDER BY predios.nome, andares.nome;
+    `);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar andares:', error);
+    res.status(500).send('Erro ao buscar andares.');
+  }
+};
+
+
+// Listar andares por prédio
+const listarPorPredio = async (req, res) => {
   const { predio_id } = req.query;
 
   if (!predio_id) return res.status(400).send('predio_id é obrigatório');
@@ -84,6 +106,7 @@ const deletarAndar = async (req, res) => {
 };
 
 module.exports = {
+  listarPorPredio,
   listarAndares,
   buscarAndarPorId,
   criarAndar,

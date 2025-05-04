@@ -1,5 +1,33 @@
 const db = require('../db');
 
+// Listar predios
+
+const listarPredios = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT
+        predios.id,
+        predios.nome,
+        predios.codigo,
+        predios.deposito_id,
+        depositos.nome AS nome_deposito
+      FROM predios
+      JOIN depositos ON predios.deposito_id = depositos.id
+      ORDER BY depositos.nome, predios.nome;
+    `);
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Erro ao listar prédios com depósitos:', error);
+    res.status(500).send('Erro ao buscar prédios.');
+  }
+};
+
+module.exports = {
+  listarPredios
+};
+
+
 // Listar prédios de um depósito
 const listarPorDeposito = async (req, res) => {
   const { id } = req.params;
@@ -106,6 +134,7 @@ const deletarPredio = async (req, res) => {
 };
 
 module.exports = {
+  listarPredios,
   listarPorRua,
   listarPorDeposito,
   buscarPredioPorId,

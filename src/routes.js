@@ -40,6 +40,7 @@ router.post('/depositos/:id/importar-layout', verificarToken, depositos.importar
 
 
 // RUAS
+router.get('/ruas', verificarToken, ruas.listarRuas);
 router.get('/ruas/por-deposito/:id', verificarToken, ruas.listarPorDeposito)
 router.get('/ruas/:id', verificarToken, ruas.buscarRuaPorId);
 router.post('/ruas', verificarToken, ruas.criarRua);
@@ -53,6 +54,8 @@ router.get('/predios/:id', verificarToken, predios.buscarPredioPorId);
 router.post('/predios', verificarToken, predios.criarPredio);
 router.put('/predios/:id', verificarToken, predios.atualizarPredio);
 router.delete('/predios/:id', verificarToken, predios.deletarPredio);
+router.get('/predios', predios.listarPredios);
+
 
 // ANDARES
 router.get('/andares', verificarToken, andares.listarAndares); // usar ?predio_id=...
@@ -60,6 +63,7 @@ router.get('/andares/:id', verificarToken, andares.buscarAndarPorId);
 router.post('/andares', verificarToken, andares.criarAndar);
 router.put('/andares/:id', verificarToken, andares.atualizarAndar);
 router.delete('/andares/:id', verificarToken, andares.deletarAndar);
+router.get('/andares/por-predio/:predio_id', andares.listarPorPredio);
 
 // APARTAMENTOS
 router.get('/apartamentos', verificarToken, apartamentos.listarApartamentos); // usar ?andar_id=...
@@ -67,6 +71,7 @@ router.get('/apartamentos/:id', verificarToken, apartamentos.buscarApartamentoPo
 router.post('/apartamentos', verificarToken, apartamentos.criarApartamento);
 router.put('/apartamentos/:id', verificarToken, apartamentos.atualizarApartamento);
 router.delete('/apartamentos/:id', verificarToken, apartamentos.deletarApartamento);
+router.get('/apartamentos/por-andar/:andar_id', apartamentos.listarPorAndar);
 
 // PRODUTOS
 router.get('/produtos', verificarToken, produtos.listarProdutos); // usar ?apartamento_id=...
@@ -74,6 +79,7 @@ router.get('/produtos/:id', verificarToken, produtos.buscarProdutoPorId);
 router.post('/produtos', verificarToken, produtos.criarProduto);
 router.put('/produtos/:id', verificarToken, produtos.atualizarProduto);
 router.delete('/produtos/:id', verificarToken, produtos.deletarProduto);
+router.get('/produtos/por-apartamentos/:apartamentos_id', produtos.listarPorApartamento);
 
 // RELATÓRIOS
 router.get('/relatorios', verificarToken, relatorios.listarRelatorios); // usar ?deposito_id=...
